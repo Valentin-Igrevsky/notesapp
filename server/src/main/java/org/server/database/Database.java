@@ -48,7 +48,7 @@ public class Database {
         }
     }
 
-    public int addNote(@NotNull Note note) throws SQLException {
+    public Integer addNote(@NotNull Note note) throws SQLException {
         if (note.getId() > 0) {
             String checkQuery = "SELECT COUNT(*) FROM notes WHERE id = ?";
             PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
@@ -56,8 +56,7 @@ public class Database {
             ResultSet rs = checkStmt.executeQuery();
 
             if (rs.next() && rs.getInt(1) > 0) {
-                updateNote(note);
-                return note.getId();
+                return updateNote(note);
             }
         }
 
@@ -151,7 +150,7 @@ public class Database {
     }
 
 
-    public void updateNote(Note note) throws SQLException {
+    public Integer updateNote(Note note) throws SQLException {
         String query = "UPDATE notes SET create_date = ?, last_modified = ?, text = ?, title = ?, owner_id = ? WHERE id = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
         pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
@@ -160,8 +159,10 @@ public class Database {
         pstmt.setString(4, note.getTitle());
         pstmt.setInt(5, note.getOwnerID());
         pstmt.setInt(6, note.getId());
-        pstmt.executeUpdate();
+
+        return pstmt.executeUpdate() > 0 ? note.getId() : null;
     }
+
 
     public boolean deleteNoteById(int noteId) throws SQLException {
         String query = "DELETE FROM notes WHERE id = ?";

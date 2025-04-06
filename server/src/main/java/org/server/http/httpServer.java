@@ -225,9 +225,9 @@ public class httpServer {
                 return;
             }
 
-            boolean userCreated = database.createUser(name, surname, username, password);
+            int userCreated = database.createUser(name, surname, username, password);
 
-            if (userCreated) {
+            if (userCreated != -1) {
                 sendResponse(exchange, 201, "User created successfully");
             } else {
                 sendResponse(exchange, 409, "Conflict: Username already exists");
@@ -235,27 +235,36 @@ public class httpServer {
         }
 
         private void addNote(HttpExchange exchange) throws SQLException, IOException {
-            Map<String, Object> note = parseBody(exchange);
+            Map<String, Object> noteBody = parseBody(exchange);
 
-            if (note == null) {
+            if (noteBody == null) {
                 sendResponse(exchange, 400, "Bad Request: Missing required fields");
                 return;
             }
 
-            Date creationDate = (Date) note.get("creationDate");
-            Date lastModifyDate = (Date) note.get("lastModifyDate");
-            int note_id = (int) note.get("id");
-            String title = (String) note.get("title");
-            String text = (String) note.get("text");
+            Date creationDate = (Date) noteBody.get("creationDate");
+            Date lastModifyDate = (Date) noteBody.get("lastModifyDate");
+            int note_id = (int) noteBody.get("id");
+            String title = (String) noteBody.get("title");
+            String text = (String) noteBody.get("text");
 
-            Map<String, Object> owner = (Map<String, Object>) note.get("user");
+            Map<String, Object> owner = (Map<String, Object>) noteBody.get("user");
             int owner_id = (int) owner.get("id");
             String name = (String) owner.get("owner");
             String surname = (String) owner.get("surname");
             String username = (String) owner.get("username");
             String password = (String) owner.get("password");
 
-            database.addNote(new Note(note_id, creationDate, lastModifyDate, new User(owner_id, name, surname, password, username), text, title));
+            Note note = new Note(note_id, creationDate, lastModifyDate, new User(owner_id, name, surname, password, username), text, title);
+
+            Integer newNoteId = database.addNote(note);
+
+            if (newNoteId == null) {
+                sendResponse(exchange, 500, "Internal Server Error");
+            } else {
+                note.setId(newNoteId);
+                sendResponse(exchange, 200, note.toJSON());
+            }
         }
 
 
