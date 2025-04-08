@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Executors;
 
@@ -38,7 +40,6 @@ public class httpServer {
 
         server.setExecutor(Executors.newCachedThreadPool());
 
-        // Запускаем сервер
         server.start();
         System.out.println(String.format("[Start Server][%d]", port));
     }
@@ -190,7 +191,7 @@ public class httpServer {
                 return;
             }
 
-            String jsonResponse = objectMapper.writeValueAsString(user);
+            String jsonResponse = user.toJSON();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             sendResponse(exchange, 200, jsonResponse);
         }
@@ -204,6 +205,8 @@ public class httpServer {
                 case "/data/new":
                     addNote(exchange);
                     break;
+                default:
+                    sendResponse(exchange, 405, "Method Not Allowed: " + exchange.getRequestMethod());
             }
         }
 
@@ -225,9 +228,9 @@ public class httpServer {
                 return;
             }
 
-            int userCreated = database.createUser(name, surname, username, password);
+            Integer userCreated = database.createUser(name, surname, username, password);
 
-            if (userCreated != -1) {
+            if (userCreated != null) {
                 sendResponse(exchange, 201, "User created successfully");
             } else {
                 sendResponse(exchange, 409, "Conflict: Username already exists");
@@ -242,15 +245,20 @@ public class httpServer {
                 return;
             }
 
-            Date creationDate = (Date) noteBody.get("creationDate");
-            Date lastModifyDate = (Date) noteBody.get("lastModifyDate");
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+            LocalDateTime localDateTime = LocalDateTime.parse((String) noteBody.get("creationDate"), formatter);
+            Date creationDate = java.sql.Timestamp.valueOf(localDateTime);
+
+            localDateTime = LocalDateTime.parse((String) noteBody.get("lastModifyDate"), formatter);
+            Date lastModifyDate = java.sql.Timestamp.valueOf(localDateTime);
+
             int note_id = (int) noteBody.get("id");
             String title = (String) noteBody.get("title");
             String text = (String) noteBody.get("text");
 
-            Map<String, Object> owner = (Map<String, Object>) noteBody.get("user");
+            Map<String, Object> owner = (Map<String, Object>) noteBody.get("owner");
             int owner_id = (int) owner.get("id");
-            String name = (String) owner.get("owner");
+            String name = (String) owner.get("name");
             String surname = (String) owner.get("surname");
             String username = (String) owner.get("username");
             String password = (String) owner.get("password");

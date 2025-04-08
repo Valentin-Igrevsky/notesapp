@@ -14,7 +14,9 @@ public class Database {
     public void connect(String path) {
         try {
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection(path);
+            conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+            Statement stmt = conn.createStatement();
+            stmt.execute("PRAGMA foreign_keys = ON;");
             System.out.println("Connected to the database.");
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
@@ -22,14 +24,47 @@ public class Database {
         }
     }
 
-    public int createUser(String name, String surname, String username, String password) throws SQLException {
+    public void createTables() {
+        try (Statement stmt = conn.createStatement()) {
+            String createUsers = """
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        surname TEXT,
+                        username TEXT UNIQUE NOT NULL,
+                        password TEXT NOT NULL
+                    );
+                    """;
+
+            String createNotes = """
+                    CREATE TABLE IF NOT EXISTS notes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        create_date TEXT NOT NULL,
+                        last_modified TEXT NOT NULL,
+                        text TEXT,
+                        title TEXT,
+                        owner_id INTEGER,
+                        FOREIGN KEY (owner_id) REFERENCES users(id)
+                    );
+                    """;
+
+            stmt.execute(createUsers);
+            stmt.execute(createNotes);
+            System.out.println("Tables created successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public Integer createUser(String name, String surname, String username, String password) throws SQLException {
         String checkQuery = "SELECT COUNT(*) FROM users WHERE username = ?";
         PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
         checkStmt.setString(1, username);
         ResultSet rs = checkStmt.executeQuery();
 
         if (rs.next() && rs.getInt(1) > 0) {
-            return -1;
+            return null;
         }
 
         String query = "INSERT INTO users(username, password, name, surname) VALUES(?,?,?,?)";
@@ -60,20 +95,29 @@ public class Database {
             }
         }
 
-        String query = "INSERT INTO notes(create_date, last_modified, text, title, owner_id) VALUES (?,?,?,?,?)";
-        PreparedStatement pstmt = conn.prepareStatement(query);
-        pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
-        pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate().getTime()));
-        pstmt.setString(3, note.getText());
-        pstmt.setString(4, note.getTitle());
-        pstmt.setInt(5, note.getOwnerID());
-        pstmt.executeUpdate();
+        String checkUserQuery = "SELECT COUNT(*) FROM users WHERE id = ?";
+        PreparedStatement checkUserStmt = conn.prepareStatement(checkUserQuery);
+        checkUserStmt.setInt(1, note.getOwnerID());
+        ResultSet rs = checkUserStmt.executeQuery();
 
-        ResultSet generatedKeys = pstmt.getGeneratedKeys();
-        if (generatedKeys.next()) {
-            return generatedKeys.getInt(1);
+        if (rs.next() && rs.getInt(1) > 0) {
+            String query = "INSERT INTO notes(create_date, last_modified, text, title, owner_id) VALUES (?,?,?,?,?)";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
+            pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate().getTime()));
+            pstmt.setString(3, note.getText());
+            pstmt.setString(4, note.getTitle());
+            pstmt.setInt(5, note.getOwnerID());
+            pstmt.executeUpdate();
+
+            ResultSet generatedKeys = pstmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return generatedKeys.getInt(1);
+            } else {
+                throw new SQLException("Inserting note failed, no ID obtained.");
+            }
         } else {
-            throw new SQLException("Inserting note failed, no ID obtained.");
+            throw new SQLException("Foreign key constraint failed: User with ID " + note.getOwnerID() + " does not exist.");
         }
     }
 
