@@ -6,10 +6,7 @@ import java.sql.*;
 public class UserRepository {
     public boolean createUser(User user) throws SQLException {
         String sql = "INSERT INTO users (login, password) VALUES (?, ?)";
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = Database.getConnection().prepareStatement(sql)) {
             stmt.setString(1, user.getLogin());
             stmt.setString(2, user.getPassword());
             return stmt.executeUpdate() > 0;
@@ -18,13 +15,9 @@ public class UserRepository {
 
     public User findUserByLogin(String login) throws SQLException {
         String sql = "SELECT * FROM users WHERE login = ?";
-
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = Database.getConnection().prepareStatement(sql)) {
             stmt.setString(1, login);
             ResultSet rs = stmt.executeQuery();
-
             if (rs.next()) {
                 User user = new User();
                 user.setId(rs.getInt("id"));
@@ -32,7 +25,7 @@ public class UserRepository {
                 user.setPassword(rs.getString("password"));
                 return user;
             }
-            return null;
         }
+        return null;
     }
 }

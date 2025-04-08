@@ -4,13 +4,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.server.database.NoteRepository;
 import org.server.models.Note;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import org.server.Utils.JsonUtils_server;
+import java.io.*;
+import java.sql.SQLException; // Добавлен этот импорт
 import java.util.List;
-import java.sql.*;
 
 public class NotesApi implements HttpHandler {
     private final NoteRepository noteRepo = new NoteRepository();
@@ -18,49 +15,46 @@ public class NotesApi implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
-            if ("GET".equals(exchange.getRequestMethod())) {
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+
+            if ("GET".equals(method) && path.endsWith("/notes")) {
                 handleGetNotes(exchange);
-            } else if ("POST".equals(exchange.getRequestMethod())) {
+            } else if ("POST".equals(method) && path.endsWith("/notes")) {
                 handleCreateNote(exchange);
             } else {
-                sendResponse(exchange, 405, "Method Not Allowed");
+                sendResponse(exchange, 404, "Not Found");
             }
+        } catch (SQLException e) { // Теперь SQLException распознается
+            sendResponse(exchange, 500, "Database error: " + e.getMessage());
         } catch (Exception e) {
-            sendResponse(exchange, 500, "Server error");
+            sendResponse(exchange, 500, "Server error: " + e.getMessage());
         }
     }
 
-    private void handleGetNotes(HttpExchange exchange) throws IOException {
-        // Заглушка - в реальности нужно парсить параметры
-        try {
-            List<Note> notes = noteRepo.getUserNotes(1); // Фиксированный ID
-            sendResponse(exchange, 200, notes.toString());
-        } catch (SQLException e) {
-            sendResponse(exchange, 500, "Database error");
-        }
+    private void handleGetNotes(HttpExchange exchange) throws IOException, SQLException {
+        String query = exchange.getRequestURI().getQuery();
+        int userId = Integer.parseInt(query.split("=")[1]);
+
+        List<Note> notes = noteRepo.getUserNotes(userId);
+        String response = JsonUtils_server.toJson(notes);
+        sendResponse(exchange, 200, response);
     }
 
-    private void handleCreateNote(HttpExchange exchange) throws IOException {
+    private void handleCreateNote(HttpExchange exchange) throws IOException, SQLException {
         InputStream is = exchange.getRequestBody();
-        String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        String body = new String(is.readAllBytes());
+        Note note = JsonUtils_server.fromJson(body, Note.class);
 
-        Note note = new Note(); // Заглушка
-        note.setUserId(1); // Фиксированный ID
-        note.setTitle(body.split("\"")[3]); // Простейший парсинг
-        note.setContent(body.split("\"")[7]);
-
-        try {
-            if (noteRepo.createNote(note)) {
-                sendResponse(exchange, 201, "Note created");
-            } else {
-                sendResponse(exchange, 400, "Error creating note");
-            }
-        } catch (SQLException e) {
-            sendResponse(exchange, 500, "Database error");
+        if (noteRepo.createNote(note)) {
+            sendResponse(exchange, 201, JsonUtils_server.toJson(note));
+        } else {
+            sendResponse(exchange, 400, "Error creating note");
         }
     }
 
     private void sendResponse(HttpExchange exchange, int code, String data) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(code, data.length());
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(data.getBytes());

@@ -16,7 +16,6 @@ public class Database {
 
     private static void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            // Таблица пользователей
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +23,6 @@ public class Database {
                     password TEXT NOT NULL
                 )""");
 
-            // Таблица заметок
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS notes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
