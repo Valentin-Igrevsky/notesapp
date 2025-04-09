@@ -101,6 +101,29 @@ public class httpServer {
             }
         }
 
+        private Note formatNote(Map<String, Object> noteBody) {
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+
+            LocalDateTime localDateTime = LocalDateTime.parse((String) noteBody.get("creationDate"), formatter);
+            Date creationDate = java.sql.Timestamp.valueOf(localDateTime);
+
+            localDateTime = LocalDateTime.parse((String) noteBody.get("lastModifyDate"), formatter);
+            Date lastModifyDate = java.sql.Timestamp.valueOf(localDateTime);
+
+            int note_id = (int) noteBody.get("id");
+            String title = (String) noteBody.get("title");
+            String text = (String) noteBody.get("text");
+
+            Map<String, Object> owner = (Map<String, Object>) noteBody.get("owner");
+            int owner_id = (int) owner.get("id");
+            String name = (String) owner.get("name");
+            String surname = (String) owner.get("surname");
+            String username = (String) owner.get("username");
+            String password = (String) owner.get("password");
+
+            return new Note(note_id, creationDate, lastModifyDate, new User(owner_id, name, surname, password, username), text, title);
+        }
+
         // GET-запросы
         private void handleGetRequest(HttpExchange exchange, String requestPath) throws IOException, SQLException {
             switch (requestPath) {
@@ -149,9 +172,9 @@ public class httpServer {
             Map<String, List<String>> queryParams = parseQuery(exchange);
 
             int userID;
-            if (queryParams.containsKey("id")) {
+            if (queryParams.containsKey("uid")) {
                 try {
-                    userID = Integer.parseInt(queryParams.get("id").get(0));
+                    userID = Integer.parseInt(queryParams.get("uid").get(0));
                 } catch (NumberFormatException e) {
                     sendResponse(exchange, 400, "Bad Request: Invalid user ID format");
                     return;
@@ -245,25 +268,7 @@ public class httpServer {
                 return;
             }
 
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-            LocalDateTime localDateTime = LocalDateTime.parse((String) noteBody.get("creationDate"), formatter);
-            Date creationDate = java.sql.Timestamp.valueOf(localDateTime);
-
-            localDateTime = LocalDateTime.parse((String) noteBody.get("lastModifyDate"), formatter);
-            Date lastModifyDate = java.sql.Timestamp.valueOf(localDateTime);
-
-            int note_id = (int) noteBody.get("id");
-            String title = (String) noteBody.get("title");
-            String text = (String) noteBody.get("text");
-
-            Map<String, Object> owner = (Map<String, Object>) noteBody.get("owner");
-            int owner_id = (int) owner.get("id");
-            String name = (String) owner.get("name");
-            String surname = (String) owner.get("surname");
-            String username = (String) owner.get("username");
-            String password = (String) owner.get("password");
-
-            Note note = new Note(note_id, creationDate, lastModifyDate, new User(owner_id, name, surname, password, username), text, title);
+            Note note = formatNote(noteBody);
 
             Integer newNoteId = database.addNote(note);
 
@@ -271,6 +276,7 @@ public class httpServer {
                 sendResponse(exchange, 500, "Internal Server Error");
             } else {
                 note.setId(newNoteId);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
                 sendResponse(exchange, 200, note.toJSON());
             }
         }
@@ -290,20 +296,33 @@ public class httpServer {
                 return;
             }
 
-            int noteID;
+            if (!queryParams.containsKey("uid")) {
+                sendResponse(exchange, 400, "Bad Request: Missing user ID");
+                return;
+            }
+
+            int noteId;
             try {
-                noteID = Integer.parseInt(queryParams.get("id").get(0));
+                noteId = Integer.parseInt(queryParams.get("id").get(0));
             } catch (NumberFormatException e) {
                 sendResponse(exchange, 400, "Bad Request: Invalid note ID format");
                 return;
             }
 
-            boolean isDeleted = database.deleteNoteById(noteID);
+            int userId;
+            try {
+                userId = Integer.parseInt(queryParams.get("uid").get(0));
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "Bad Request: Invalid user ID format");
+                return;
+            }
+
+            boolean isDeleted = database.deleteNoteById(noteId, userId);
 
             if (isDeleted) {
                 sendResponse(exchange, 200, "Note deleted successfully");
             } else {
-                sendResponse(exchange, 404, "Note not found: " + noteID);
+                sendResponse(exchange, 404, "Note not found: " + noteId);
             }
         }
 
@@ -313,28 +332,24 @@ public class httpServer {
                 return;
             }
 
-            Map<String, Object> note = parseBody(exchange);
+            Map<String, Object> noteBody = parseBody(exchange);
 
-            if (note == null) {
+            if (noteBody == null) {
                 sendResponse(exchange, 400, "Bad Request: Missing required fields");
                 return;
             }
 
-            Date creationDate = (Date) note.get("creationDate");
-            Date lastModifyDate = (Date) note.get("lastModifyDate");
-            int note_id = (int) note.get("id");
-            String title = (String) note.get("title");
-            String text = (String) note.get("text");
+            Note note = formatNote(noteBody);
 
-            Map<String, Object> owner = (Map<String, Object>) note.get("user");
-            int owner_id = (int) owner.get("id");
-            String name = (String) owner.get("owner");
-            String surname = (String) owner.get("surname");
-            String username = (String) owner.get("username");
-            String password = (String) owner.get("password");
-            database.updateNote(new Note(note_id, creationDate, lastModifyDate, new User(owner_id, name, surname, password, username), text, title));
+            Integer noteId = database.updateNote(note);
 
-            sendResponse(exchange, 200, "Note updated successfully");
+            if (noteId == null) {
+                sendResponse(exchange, 404, "Note not found: " + note.getId());
+            } else {
+                sendResponse(exchange, 200, "Note updated successfully: " + noteId);
+            }
+
+
         }
     }
 
@@ -349,4 +364,3 @@ public class httpServer {
         System.out.println(String.format("[Res][%s]", response));
     }
 }
-

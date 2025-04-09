@@ -84,9 +84,9 @@ public class Note {
         return id;
     }
 
-    public String getPreview() {
-        return text.length() > 10 ? text.substring(0, 10) : text;
-    }
+//    public String getPreview() {
+//        return text.length() > 10 ? text.substring(0, 10) : text;
+//    }
 
     public void setTitle(String title) {
         this.title = title;

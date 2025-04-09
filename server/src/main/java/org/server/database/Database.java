@@ -50,7 +50,6 @@ public class Database {
 
             stmt.execute(createUsers);
             stmt.execute(createNotes);
-            System.out.println("Tables created successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -141,7 +140,7 @@ public class Database {
         ResultSet rs = pstmt.executeQuery();
 
         while (rs.next()) {
-            res.add(new Note(rs.getInt("id"), rs.getDate("create_date"), rs.getDate("last_modified"), new User(rs.getInt("owner_id"), rs.getString("name"), rs.getString("surname"), rs.getString("password")), rs.getString("text"), rs.getString("title")));
+            res.add(new Note(rs.getInt("id"), new Date(rs.getLong("create_date")), new Date(rs.getLong("last_modified")), new User(rs.getInt("owner_id"), rs.getString("name"), rs.getString("surname"), rs.getString("username"), rs.getString("password")), rs.getString("text"), rs.getString("title")));
         }
         return res;
     }
@@ -195,23 +194,24 @@ public class Database {
 
 
     public Integer updateNote(Note note) throws SQLException {
-        String query = "UPDATE notes SET create_date = ?, last_modified = ?, text = ?, title = ?, owner_id = ? WHERE id = ?";
+        String query = "UPDATE notes SET create_date = ?, last_modified = ?, text = ?, title = ? WHERE id = ? AND owner_id = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
         pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
         pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate().getTime()));
         pstmt.setString(3, note.getText());
         pstmt.setString(4, note.getTitle());
-        pstmt.setInt(5, note.getOwnerID());
-        pstmt.setInt(6, note.getId());
+        pstmt.setInt(5, note.getId());
+        pstmt.setInt(6, note.getOwnerID());
 
         return pstmt.executeUpdate() > 0 ? note.getId() : null;
     }
 
 
-    public boolean deleteNoteById(int noteId) throws SQLException {
-        String query = "DELETE FROM notes WHERE id = ?";
+    public boolean deleteNoteById(int noteId, int userId) throws SQLException {
+        String query = "DELETE FROM notes WHERE id = ? AND owner_id = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
         pstmt.setInt(1, noteId);
+        pstmt.setInt(2, userId);
         return pstmt.executeUpdate() > 0;
     }
 
