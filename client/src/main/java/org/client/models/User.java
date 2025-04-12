@@ -1,6 +1,7 @@
 package org.client.models;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
@@ -17,16 +18,18 @@ public class User {
     public User() {
         this.name = null;
         this.surname = null;
+        this.username = null;
+        this.password = null;
     }
 
-    public User(int id, String name, String surname, String password) {
-        this.id = id;
+    public User(String name, String surname, String username, String password) {
         this.name = name;
         this.surname = surname;
+        this.username = username;
         this.password = password;
     }
 
-    public User(int id, String name, String surname, String password, String username) {
+    public User(int id, String name, String surname, String username, String password) {
         this.id = id;
         this.name = name;
         this.surname = surname;
@@ -74,18 +77,12 @@ public class User {
         this.id = id;
     }
 
-    public String toJSON() throws com.fasterxml.jackson.core.JsonProcessingException {
-        return ow.writeValueAsString(this);
-    }
-
     @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", surname='" + surname + '\'' +
-                ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
-                '}';
+    public String toString(){
+        try {
+            return ow.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

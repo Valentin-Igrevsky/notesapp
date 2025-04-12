@@ -9,35 +9,35 @@ import java.util.Date;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class Note {
     private static final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-    private final Date createDate;
+    private final long createDate;
+    private long lastUpdateDate;
     private User owner;
     private int id;
-    private Date lastUpdateDate;
     private String text;
     private String title;
 
     public Note() {
-        this.createDate = new Date();
-        this.lastUpdateDate = new Date();
+        this.createDate = new Date().getTime();
+        this.lastUpdateDate = new Date().getTime();
         this.owner = null;
         this.text = null;
     }
 
     public Note(User user) {
-        this.createDate = new Date();
-        this.lastUpdateDate = new Date();
+        this.createDate = new Date().getTime();
+        this.lastUpdateDate = new Date().getTime();
         this.owner = user;
         this.text = null;
     }
 
     public Note(User owner, String text) {
-        this.createDate = new Date();
-        this.lastUpdateDate = new Date();
+        this.createDate = new Date().getTime();
+        this.lastUpdateDate = new Date().getTime();
         this.owner = owner;
         this.text = text;
     }
 
-    public Note(int id, Date creationDate, Date lastModify, User owner, String text, String title) {
+    public Note(int id, long creationDate, long lastModify, User owner, String text, String title) {
         this.id = id;
         this.createDate = creationDate;
         this.lastUpdateDate = lastModify;
@@ -46,25 +46,25 @@ public class Note {
         this.title = title;
     }
 
-    @Override
-    public String toString() {
-        return title;
-    }
+//    @Override
+//    public String toString() {
+//        return title;
+//    }
 
     public void updateNote(String text) {
         this.text = text;
-        this.lastUpdateDate = new Date();
+        this.lastUpdateDate = new Date().getTime();
     }
 
     public String toJSON() throws com.fasterxml.jackson.core.JsonProcessingException {
         return ow.writeValueAsString(this);
     }
 
-    public Date getCreateDate() {
+    public long getCreateDate() {
         return createDate;
     }
 
-    public Date getLastUpdateDate() {
+    public long getLastUpdateDate() {
         return lastUpdateDate;
     }
 
@@ -83,10 +83,6 @@ public class Note {
     public int getId() {
         return id;
     }
-
-//    public String getPreview() {
-//        return text.length() > 10 ? text.substring(0, 10) : text;
-//    }
 
     public void setTitle(String title) {
         this.title = title;

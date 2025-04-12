@@ -78,13 +78,15 @@ public class httpServer {
             Map<String, List<String>> res = new HashMap<>();
 
             String queryParams = exchange.getRequestURI().getQuery();
-            if (queryParams != null) {
-                String[] params = queryParams.split("&");
-                for (String param : params) {
-                    String[] keyValue = param.split("=");
-                    res.put(keyValue[0], Collections.singletonList(keyValue.length > 1 ? keyValue[1] : ""));
-                }
+            if (queryParams == null) {
+                return null;
             }
+            String[] params = queryParams.split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                res.put(keyValue[0], Collections.singletonList(keyValue.length > 1 ? keyValue[1] : ""));
+            }
+
             return res;
         }
 
@@ -101,14 +103,38 @@ public class httpServer {
             }
         }
 
+        private Map<Boolean, List<String>> validateAndExtractQueryParams(Map<String, List<String>> queryParams, List<String> requiredKeys) {
+            List<String> errors = new ArrayList<>();
+            List<String> values = new ArrayList<>();
+
+            for (String key : requiredKeys) {
+                if (!queryParams.containsKey(key)) {
+                    errors.add("Missing parameter: " + key);
+                    continue;
+                }
+
+                List<String> paramValues = queryParams.get(key);
+                if (paramValues == null || paramValues.isEmpty() || paramValues.get(0) == null || paramValues.get(0).trim().isEmpty()) {
+                    errors.add("Empty or invalid value for parameter: " + key);
+                    continue;
+                }
+
+                values.add(paramValues.get(0).trim());
+            }
+
+            Map<Boolean, List<String>> result = new HashMap<>();
+            if (errors.isEmpty()) {
+                result.put(true, values);
+            } else {
+                result.put(false, errors);
+            }
+
+            return result;
+        }
+
         private Note formatNote(Map<String, Object> noteBody) {
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-
-            LocalDateTime localDateTime = LocalDateTime.parse((String) noteBody.get("creationDate"), formatter);
-            Date creationDate = java.sql.Timestamp.valueOf(localDateTime);
-
-            localDateTime = LocalDateTime.parse((String) noteBody.get("lastModifyDate"), formatter);
-            Date lastModifyDate = java.sql.Timestamp.valueOf(localDateTime);
+            long creationDate = (long) noteBody.get("createDate");
+            long lastModifyDate = (long) noteBody.get("lastUpdateDate");
 
             int note_id = (int) noteBody.get("id");
             String title = (String) noteBody.get("title");
@@ -127,13 +153,13 @@ public class httpServer {
         // GET-запросы
         private void handleGetRequest(HttpExchange exchange, String requestPath) throws IOException, SQLException {
             switch (requestPath) {
-                case "/data/get":
+                case "/api/data/get":
                     getNoteByID(exchange);
                     break;
-                case "/data/get/all":
+                case "/api/data/get/all":
                     getUserNotes(exchange);
                     break;
-                case "/authentication":
+                case "/login/authentication":
                     authenticateUser(exchange);
                     break;
                 default:
@@ -143,48 +169,41 @@ public class httpServer {
 
         private void getNoteByID(HttpExchange exchange) throws IOException, SQLException {
             Map<String, List<String>> queryParams = parseQuery(exchange);
+            Map<Boolean, List<String>> result = validateAndExtractQueryParams(queryParams, List.of("id", "uid"));
 
-            int noteID;
-            if (queryParams.containsKey("id")) {
-                try {
-                    noteID = Integer.parseInt(queryParams.get("id").get(0));
-                } catch (NumberFormatException e) {
-                    sendResponse(exchange, 400, "Bad Request: Invalid note ID format");
-                    return;
-                }
-
-            } else {
-                sendResponse(exchange, 400, "Bad Request: The record ID is specified incorrectly");
+            if (!result.containsKey(true)) {
+                sendResponse(exchange, 400, String.join("; ", result.get(false)));
                 return;
             }
 
-            Note note = database.getNoteById(noteID);
+            int noteId = Integer.parseInt(result.get(true).get(0));
+            int userId = Integer.parseInt(result.get(true).get(1));
+
+            List<Note> note = database.getNoteById(userId, noteId);
 
             if (note != null) {
+                Map<String, List<Note>> responseMap = Map.of("notes", note);
+                String jsonString = objectMapper.writeValueAsString(responseMap);
+
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
-                sendResponse(exchange, 200, note.toJSON());
+                sendResponse(exchange, 200, jsonString);
             } else {
-                sendResponse(exchange, 404, "Note not found: " + noteID);
+                sendResponse(exchange, 404, "Note not found: " + noteId);
             }
         }
 
         private void getUserNotes(HttpExchange exchange) throws IOException, SQLException {
             Map<String, List<String>> queryParams = parseQuery(exchange);
+            Map<Boolean, List<String>> result = validateAndExtractQueryParams(queryParams, List.of("uid"));
 
-            int userID;
-            if (queryParams.containsKey("uid")) {
-                try {
-                    userID = Integer.parseInt(queryParams.get("uid").get(0));
-                } catch (NumberFormatException e) {
-                    sendResponse(exchange, 400, "Bad Request: Invalid user ID format");
-                    return;
-                }
-            } else {
-                sendResponse(exchange, 400, "Bad Request: The user ID is missing");
+            if (!result.containsKey(true)) {
+                sendResponse(exchange, 400, String.join("; ", result.get(false)));
                 return;
             }
 
-            List<Note> notes = database.getUserNotes(userID);
+            int userId = Integer.parseInt(result.get(true).get(0));
+
+            List<Note> notes = database.getUserNotes(userId);
 
             Map<String, List<Note>> responseMap = Map.of("notes", notes);
             String jsonString = objectMapper.writeValueAsString(responseMap);
@@ -194,19 +213,16 @@ public class httpServer {
         }
 
         private void authenticateUser(HttpExchange exchange) throws IOException, SQLException {
-            Map<String, Object> credentials = parseBody(exchange);
+            Map<String, List<String>> queryParams = parseQuery(exchange);
+            Map<Boolean, List<String>> result = validateAndExtractQueryParams(queryParams, List.of("username", "password"));
 
-            if (credentials == null) {
+            if (!result.containsKey(true)) {
+                sendResponse(exchange, 400, String.join("; ", result.get(false)));
                 return;
             }
 
-            String username = (String) credentials.get("username");
-            String password = (String) credentials.get("password");
-
-            if (username == null || password == null) {
-                sendResponse(exchange, 400, "Bad Request: Missing username or password");
-                return;
-            }
+            String username = result.get(true).get(0);
+            String password = result.get(true).get(1);
 
             User user = database.authenticateUser(username, password);
             if (user == null) {
@@ -214,18 +230,17 @@ public class httpServer {
                 return;
             }
 
-            String jsonResponse = user.toJSON();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
-            sendResponse(exchange, 200, jsonResponse);
+            sendResponse(exchange, 200, user.toJSON());
         }
 
         // POST-запросы
         private void handlePostRequest(HttpExchange exchange, String requestPath) throws IOException, SQLException {
             switch (requestPath) {
-                case "/registration":
+                case "/login/registration":
                     registerUser(exchange);
                     break;
-                case "/data/new":
+                case "/api/data/new":
                     addNote(exchange);
                     break;
                 default:
@@ -284,38 +299,26 @@ public class httpServer {
 
         // DELETE-запросы
         private void handleDeleteRequest(HttpExchange exchange, String requestPath) throws IOException, SQLException {
-            if (!requestPath.equals("/data/delete")) {
-                sendResponse(exchange, 405, "Method Not Allowed: " + exchange.getRequestMethod());
-                return;
+            switch (requestPath) {
+                case "/api/data/delete":
+                    deleteNoteById(exchange);
+                    break;
+                default:
+                    sendResponse(exchange, 405, "Method Not Allowed: " + exchange.getRequestMethod());
             }
+        }
 
+        private void deleteNoteById(HttpExchange exchange) throws IOException, SQLException {
             Map<String, List<String>> queryParams = parseQuery(exchange);
+            Map<Boolean, List<String>> result = validateAndExtractQueryParams(queryParams, List.of("id", "uid"));
 
-            if (!queryParams.containsKey("id")) {
-                sendResponse(exchange, 400, "Bad Request: Missing note ID");
+            if (!result.containsKey(true)) {
+                sendResponse(exchange, 400, String.join("; ", result.get(false)));
                 return;
             }
 
-            if (!queryParams.containsKey("uid")) {
-                sendResponse(exchange, 400, "Bad Request: Missing user ID");
-                return;
-            }
-
-            int noteId;
-            try {
-                noteId = Integer.parseInt(queryParams.get("id").get(0));
-            } catch (NumberFormatException e) {
-                sendResponse(exchange, 400, "Bad Request: Invalid note ID format");
-                return;
-            }
-
-            int userId;
-            try {
-                userId = Integer.parseInt(queryParams.get("uid").get(0));
-            } catch (NumberFormatException e) {
-                sendResponse(exchange, 400, "Bad Request: Invalid user ID format");
-                return;
-            }
+            int noteId = Integer.parseInt(result.get(true).get(0));
+            int userId = Integer.parseInt(result.get(true).get(1));
 
             boolean isDeleted = database.deleteNoteById(noteId, userId);
 
@@ -327,11 +330,16 @@ public class httpServer {
         }
 
         private void handlePatchRequest(HttpExchange exchange, String requestPath) throws IOException, SQLException {
-            if (!requestPath.equals("/data/patch")) {
-                sendResponse(exchange, 405, "Method Not Allowed: " + exchange.getRequestMethod());
-                return;
+            switch (requestPath) {
+                case "/api/data/patch":
+                    patchNote(exchange);
+                    break;
+                default:
+                    sendResponse(exchange, 405, "Method Not Allowed: " + exchange.getRequestMethod());
             }
+        }
 
+        private void patchNote(HttpExchange exchange) throws IOException, SQLException {
             Map<String, Object> noteBody = parseBody(exchange);
 
             if (noteBody == null) {
@@ -348,10 +356,10 @@ public class httpServer {
             } else {
                 sendResponse(exchange, 200, "Note updated successfully: " + noteId);
             }
-
-
         }
     }
+
+
 
 
     // Отправка ответа

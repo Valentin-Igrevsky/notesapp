@@ -102,8 +102,8 @@ public class Database {
         if (rs.next() && rs.getInt(1) > 0) {
             String query = "INSERT INTO notes(create_date, last_modified, text, title, owner_id) VALUES (?,?,?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(query);
-            pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
-            pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate().getTime()));
+            pstmt.setDate(1, new java.sql.Date(note.getCreateDate()));
+            pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate()));
             pstmt.setString(3, note.getText());
             pstmt.setString(4, note.getTitle());
             pstmt.setInt(5, note.getOwnerID());
@@ -120,17 +120,40 @@ public class Database {
         }
     }
 
-    public Note getNoteById(int noteId) throws SQLException {
-        String query = "SELECT n.*, u.* " + "FROM notes n " + "JOIN users u ON n.owner_id = u.id " + "WHERE n.id = ?";
+    public List<Note> getNoteById(int userId, int noteId) throws SQLException {
+        List<Note> res = new Vector<Note>();
+        String query = "SELECT n.*, u.* " +
+                "FROM notes n " +
+                "JOIN users u ON n.owner_id = u.id " +
+                "WHERE n.id = ? AND n.owner_id = ?";
+
         PreparedStatement pstmt = conn.prepareStatement(query);
         pstmt.setInt(1, noteId);
+        pstmt.setInt(2, userId);
+
         ResultSet rs = pstmt.executeQuery();
 
         if (rs.next()) {
-            return new Note(rs.getInt("id"), rs.getDate("create_date"), rs.getDate("last_modified"), new User(rs.getInt("owner_id"), rs.getString("name"), rs.getString("surname"), rs.getString("password")), rs.getString("text"), rs.getString("title"));
+            res.add(new Note(
+                            rs.getInt("id"),
+                            rs.getLong("create_date"),
+                            rs.getLong("last_modified"),
+                            new User(
+                                    rs.getInt("owner_id"),
+                                    rs.getString("name"),
+                                    rs.getString("surname"),
+                                    rs.getString("password"),
+                                    rs.getString("username")
+                            ),
+                            rs.getString("text"),
+                            rs.getString("title")
+                    )
+            );
+            return res;
         }
         return null;
     }
+
 
     public List<Note> getUserNotes(int owner_id) throws SQLException {
         List<Note> res = new Vector<Note>();
@@ -140,7 +163,22 @@ public class Database {
         ResultSet rs = pstmt.executeQuery();
 
         while (rs.next()) {
-            res.add(new Note(rs.getInt("id"), new Date(rs.getLong("create_date")), new Date(rs.getLong("last_modified")), new User(rs.getInt("owner_id"), rs.getString("name"), rs.getString("surname"), rs.getString("username"), rs.getString("password")), rs.getString("text"), rs.getString("title")));
+            res.add(
+                    new Note(
+                            rs.getInt("id"),
+                            rs.getLong("create_date"),
+                            rs.getLong("last_modified"),
+                            new User(
+                                    rs.getInt("owner_id"),
+                                    rs.getString("name"),
+                                    rs.getString("surname"),
+                                    rs.getString("username"),
+                                    rs.getString("password")
+                            ),
+                            rs.getString("text"),
+                            rs.getString("title")
+                    )
+            );
         }
         return res;
     }
@@ -150,7 +188,12 @@ public class Database {
         PreparedStatement pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery();
         if (rs.next()) {
-            new User(rs.getInt("owner_id"), rs.getString("name"), rs.getString("surname"), rs.getString("password"));
+            new User(
+                    rs.getInt("owner_id"),
+                    rs.getString("name"),
+                    rs.getString("surname"),
+                    rs.getString("password")
+            );
         }
         return null;
     }
@@ -196,8 +239,8 @@ public class Database {
     public Integer updateNote(Note note) throws SQLException {
         String query = "UPDATE notes SET create_date = ?, last_modified = ?, text = ?, title = ? WHERE id = ? AND owner_id = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
-        pstmt.setDate(1, new java.sql.Date(note.getCreateDate().getTime()));
-        pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate().getTime()));
+        pstmt.setDate(1, new java.sql.Date(note.getCreateDate()));
+        pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate()));
         pstmt.setString(3, note.getText());
         pstmt.setString(4, note.getTitle());
         pstmt.setInt(5, note.getId());
