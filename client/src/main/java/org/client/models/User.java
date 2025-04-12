@@ -78,7 +78,7 @@ public class User {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         try {
             return ow.writeValueAsString(this);
         } catch (JsonProcessingException e) {

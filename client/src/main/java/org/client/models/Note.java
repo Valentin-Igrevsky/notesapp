@@ -55,7 +55,7 @@ public class Note {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         try {
             return ow.writeValueAsString(this);
         } catch (JsonProcessingException e) {
