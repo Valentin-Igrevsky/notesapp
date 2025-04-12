@@ -15,8 +15,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Executors;
 
@@ -231,7 +229,7 @@ public class httpServer {
             }
 
             exchange.getResponseHeaders().set("Content-Type", "application/json");
-            sendResponse(exchange, 200, user.toJSON());
+            sendResponse(exchange, 200, user.toString());
         }
 
         // POST-запросы
@@ -292,7 +290,7 @@ public class httpServer {
             } else {
                 note.setId(newNoteId);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
-                sendResponse(exchange, 200, note.toJSON());
+                sendResponse(exchange, 200, note.toString());
             }
         }
 
@@ -358,8 +356,6 @@ public class httpServer {
             }
         }
     }
-
-
 
 
     // Отправка ответа

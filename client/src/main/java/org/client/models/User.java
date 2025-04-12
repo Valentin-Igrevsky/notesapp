@@ -37,6 +37,15 @@ public class User {
         this.username = username;
     }
 
+    @Override
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public int getId() {
         return id;
     }
@@ -75,14 +84,5 @@ public class User {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    @Override
-    public String toString(){
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

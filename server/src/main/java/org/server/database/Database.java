@@ -183,21 +183,6 @@ public class Database {
         return res;
     }
 
-    public User getUserById(int user_id) throws SQLException {
-        String query = "SELECT * FROM users WHERE id = ?";
-        PreparedStatement pstmt = conn.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            new User(
-                    rs.getInt("owner_id"),
-                    rs.getString("name"),
-                    rs.getString("surname"),
-                    rs.getString("password")
-            );
-        }
-        return null;
-    }
-
     public User authenticateUser(String username, String password) throws SQLException {
         String query = "SELECT * FROM users WHERE username = ? AND password = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
@@ -208,31 +193,6 @@ public class Database {
             return null;
         }
         return new User(rs.getInt("id"), rs.getString("name"), rs.getString("surname"), rs.getString("password"), rs.getString("username"));
-    }
-
-    public User updateUser(User user) throws SQLException {
-        String checkQuery = "SELECT id FROM users WHERE username = ?";
-        PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
-        checkStmt.setString(1, user.getUsername());
-        ResultSet rs = checkStmt.executeQuery();
-
-        if (rs.next()) {
-            int existingUserId = rs.getInt("id");
-            if (existingUserId != user.getId()) {
-                return null;
-            }
-        }
-
-        String updateQuery = "UPDATE users SET name = ?, surname = ?, username = ?, password = ? WHERE id = ?";
-        PreparedStatement pstmt = conn.prepareStatement(updateQuery);
-        pstmt.setString(1, user.getName());
-        pstmt.setString(2, user.getSurname());
-        pstmt.setString(3, user.getUsername());
-        pstmt.setString(4, user.getPassword());
-        pstmt.setInt(5, user.getId());
-        pstmt.executeUpdate();
-
-        return user;
     }
 
 
