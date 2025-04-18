@@ -1,7 +1,11 @@
 package org.client;
 
-public class Main {
-    public static void main(String[] args) throws Exception {
 
+import org.client.controller.Controller;
+
+public class Main {
+    public static void main(String[] args) {
+        Controller controller = new Controller();
+        controller.run();
     }
 }

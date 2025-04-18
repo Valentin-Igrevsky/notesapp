@@ -346,6 +346,7 @@ public class httpServer {
             }
 
             Note note = formatNote(noteBody);
+            note.setLastUpdateDate();
 
             Integer noteId = database.updateNote(note);
 
