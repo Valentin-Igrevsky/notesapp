@@ -84,6 +84,10 @@ public class Note {
         return id;
     }
 
+    public void setLastUpdateDate() {
+        this.lastUpdateDate = new Date().getTime();
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }

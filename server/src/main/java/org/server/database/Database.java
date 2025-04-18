@@ -237,14 +237,13 @@ public class Database {
 
 
     public Integer updateNote(Note note) throws SQLException {
-        String query = "UPDATE notes SET create_date = ?, last_modified = ?, text = ?, title = ? WHERE id = ? AND owner_id = ?";
+        String query = "UPDATE notes SET last_modified = ?, text = ?, title = ? WHERE id = ? AND owner_id = ?";
         PreparedStatement pstmt = conn.prepareStatement(query);
-        pstmt.setDate(1, new java.sql.Date(note.getCreateDate()));
-        pstmt.setDate(2, new java.sql.Date(note.getLastUpdateDate()));
-        pstmt.setString(3, note.getText());
-        pstmt.setString(4, note.getTitle());
-        pstmt.setInt(5, note.getId());
-        pstmt.setInt(6, note.getOwnerID());
+        pstmt.setDate(1, new java.sql.Date(note.getLastUpdateDate()));
+        pstmt.setString(2, note.getText());
+        pstmt.setString(3, note.getTitle());
+        pstmt.setInt(4, note.getId());
+        pstmt.setInt(5, note.getOwnerID());
 
         return pstmt.executeUpdate() > 0 ? note.getId() : null;
     }

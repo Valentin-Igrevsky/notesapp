@@ -15,7 +15,7 @@ public class AuthClient {
     private static final String BASE_URL = "http://localhost:8080/login";
     private final HttpClient client = HttpClient.newHttpClient();
 
-    public Integer register(User user) throws Exception {
+    public HttpResponse<String> register(User user) throws Exception {
         String json = user.toString();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + "/registration"))
@@ -23,13 +23,10 @@ public class AuthClient {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        HttpResponse<String> response = client.send(
-                request, HttpResponse.BodyHandlers.ofString()
-        );
-        return response.statusCode();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    public Map.Entry<Integer, User> login(String username, String password) throws Exception {
+    public HttpResponse<String> login(String username, String password) throws Exception {
         String url = String.format("%s/authentication?username=%s&password=%s",
                 BASE_URL,
                 URLEncoder.encode(username, StandardCharsets.UTF_8),
@@ -41,17 +38,6 @@ public class AuthClient {
                 .GET()
                 .build();
 
-        HttpResponse<String> response = client.send(
-                request, HttpResponse.BodyHandlers.ofString()
-        );
-
-        int statusCode = response.statusCode();
-        User user = null;
-
-        if (statusCode == 200) {
-            user = NoteJsonParser.fromJson(response.body(), User.class);
-        }
-
-        return Map.entry(statusCode, user != null ? user : new User());
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

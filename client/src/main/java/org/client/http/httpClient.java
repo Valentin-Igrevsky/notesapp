@@ -1,83 +1,73 @@
 package org.client.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.client.models.httpPacket;
+import org.client.models.Note;
+import org.client.models.User;
+import org.client.utils.NoteJsonParser;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Map;
+import java.net.http.HttpResponse;
+import java.util.List;
 
 public class httpClient {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String BASE_URL = "http://localhost:8080";
+    private final AuthClient authClient = new AuthClient();
+    private final NotesClient notesClient = new NotesClient();
 
-    public String sendGetRequest(String endpoint) throws IOException {
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        return getResponse(connection);
+    public httpPacket register(User user) throws Exception {
+        HttpResponse<String> response = authClient.register(user);
+        return new httpPacket(response.statusCode() == 201, response.statusCode(), response.body(), null, null, null);
     }
 
-    public String sendPostRequest(String urlString, String jsonBody) throws IOException {
-        URL url = new URL(urlString);  // Убедись, что urlString правильный
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    public httpPacket login(String username, String password) throws Exception {
+        HttpResponse<String> response = authClient.login(username, password);
 
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/json");
-
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = jsonBody.getBytes("utf-8");
-            os.write(input, 0, input.length);
-        }
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-            System.out.println("[CLIENT] Ответ от сервера: " + response.toString());
-            return response.toString();
+        if (response.statusCode() == 200) {
+            User user = NoteJsonParser.fromJson(response.body(), User.class);
+            return new httpPacket(true, response.statusCode(), response.body(), user, null, null);
+        } else {
+            return new httpPacket(false, response.statusCode(), response.body(), null, null, null);
         }
     }
 
-    public String sendDeleteRequest(String endpoint) throws IOException {
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("DELETE");
-        return getResponse(connection);
+    public httpPacket getNoteById(int userId, int noteId) throws Exception {
+        HttpResponse<String> response = notesClient.getNoteById(userId, noteId);
+
+        if (response.statusCode() == 200) {
+            List<Note> ServerNotes = NoteJsonParser.fromJsonList(response.body(), Note.class);
+            return new httpPacket(true, response.statusCode(), response.body(), null, null, ServerNotes.getFirst());
+        } else {
+            return new httpPacket(false, response.statusCode(), response.body(), null, null, null);
+        }
     }
 
-    public String sendPatchRequest(String endpoint, Map<String, Object> body) throws IOException {
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("PATCH");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setDoOutput(true);
+    public httpPacket getAllNotes(int userId) throws Exception {
+        HttpResponse<String> response = notesClient.getAllNotes(userId);
 
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = objectMapper.writeValueAsBytes(body);
-            os.write(input, 0, input.length);
+        if (response.statusCode() == 200) {
+            List<Note> ServerNotes = NoteJsonParser.fromJsonList(response.body(), Note.class);
+            return new httpPacket(true, response.statusCode(), response.body(), null, ServerNotes, null);
+        } else {
+            return new httpPacket(false, response.statusCode(), response.body(), null, null, null);
         }
-
-        return getResponse(connection);
     }
 
-    private String getResponse(HttpURLConnection connection) throws IOException {
-        int responseCode = connection.getResponseCode();
-        InputStream is = (responseCode >= 200 && responseCode < 400)
-                ? connection.getInputStream()
-                : connection.getErrorStream();
+    public httpPacket addNote(Note note) throws Exception {
+        HttpResponse<String> response = notesClient.addNote(note);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
+        if (response.statusCode() == 200) {
+            Note ServerNote = NoteJsonParser.fromJson(response.body(), Note.class);
+            return new httpPacket(true, response.statusCode(), response.body(), null, null, ServerNote);
+        } else {
+            return new httpPacket(true, response.statusCode(), response.body(), null, null, null);
         }
-        reader.close();
+    }
 
-        return response.toString();
+    public httpPacket deleteNoteById(int userId, int noteId) throws Exception {
+        HttpResponse<String> response = notesClient.deleteNoteById(userId, noteId);
+        return new httpPacket(response.statusCode() == 200, response.statusCode(), response.body(), null, null, null);
+    }
+
+    public httpPacket patchNote(Note note) throws Exception {
+        HttpResponse<String> response = notesClient.patchNote(note);
+        return new httpPacket(response.statusCode() == 200, response.statusCode(), response.body(), null, null, null);
     }
 }
