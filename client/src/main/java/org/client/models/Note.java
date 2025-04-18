@@ -17,21 +17,6 @@ public class Note {
     private String text;
     private User owner;
 
-    public Note() {
-        this.createDate = new Date().getTime();
-        this.lastUpdateDate = new Date().getTime();
-        this.owner = null;
-        this.text = null;
-    }
-
-    public Note(User user) {
-        this.createDate = new Date().getTime();
-        this.lastUpdateDate = new Date().getTime();
-        this.owner = user;
-        this.text = null;
-        this.title = null;
-    }
-
     public Note(User owner, String text, String title) {
         this.createDate = new Date().getTime();
         this.lastUpdateDate = new Date().getTime();
@@ -47,11 +32,6 @@ public class Note {
         this.owner = owner;
         this.text = text;
         this.title = title;
-    }
-
-    public void updateNote(String text) {
-        this.text = text;
-        this.lastUpdateDate = new Date().getTime();
     }
 
     @Override
@@ -93,9 +73,5 @@ public class Note {
 
     public void setText(String content) {
         this.text = content;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 }
