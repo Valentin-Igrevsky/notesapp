@@ -98,4 +98,8 @@ public class Note {
     public void setOwner(User owner) {
         this.owner = owner;
     }
+
+    public void setLastUpdateDate() {
+        this.lastUpdateDate = new Date().getTime();
+    }
 }
