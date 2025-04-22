@@ -1,6 +1,5 @@
 package org.client;
 
-
 import org.client.controller.Controller;
 
 public class Main {
