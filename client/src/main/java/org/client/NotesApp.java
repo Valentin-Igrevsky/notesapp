@@ -10,7 +10,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.client.models.Note;
 import org.client.controller.Controller;
-import javafx.geometry.Insets; // Исправленный импорт
+import javafx.geometry.Insets;
+import javafx.animation.FadeTransition;
+import javafx.util.Duration;
 
 import java.util.List;
 
@@ -30,7 +32,7 @@ public class NotesApp extends Application {
 
     private void showLoginGUI(Stage stage) {
         GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20)); // Используется javafx.geometry.Insets
+        grid.setPadding(new Insets(20));
         grid.setHgap(10);
         grid.setVgap(10);
 
@@ -201,6 +203,13 @@ public class NotesApp extends Application {
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
+        // Анимация появления
+        dialog.getDialogPane().setOpacity(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(500), dialog.getDialogPane());
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        fade.play();
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 if (titleField.getText().isEmpty() || contentArea.getText().isEmpty()) {
@@ -233,6 +242,13 @@ public class NotesApp extends Application {
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
+        // Анимация появления
+        dialog.getDialogPane().setOpacity(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(500), dialog.getDialogPane());
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        fade.play();
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 if (titleField.getText().isEmpty() || contentArea.getText().isEmpty()) {
@@ -264,6 +280,13 @@ public class NotesApp extends Application {
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
+        // Анимация появления
+        dialog.getDialogPane().setOpacity(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(500), dialog.getDialogPane());
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        fade.play();
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 if (syncChoice.getValue().equals("Заменить локальные заметки серверными")) {
@@ -284,6 +307,14 @@ public class NotesApp extends Application {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+
+        // Анимация появления
+        alert.getDialogPane().setOpacity(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(500), alert.getDialogPane());
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        fade.play();
+
         alert.showAndWait();
     }
 

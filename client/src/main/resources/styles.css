@@ -1,41 +1,195 @@
+
+@font-face {
+    font-family: 'Anime Ace';
+    src: url('/fonts/animeacev05.ttf');
+}
+
+@font-face {
+    font-family: 'Anime Ace';
+    src: url('/fonts/AnimeAceBold.ttf');
+    font-weight: 700;
+}
+
+/* Основной стиль приложения */
 .root {
-    -fx-background-color: #1A2533;
+    -fx-background-image: url('/images/background.jpg');
+    -fx-background-size: cover;
+    -fx-background-position: center;
+    -fx-font-family: 'Anime Ace', sans-serif;
+    -fx-font-size: 14px;
 }
+
+/* Полупрозрачный оверлей для лучшей читаемости */
+.grid-pane, .border-pane, .dialog-pane {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 20px;
+    -fx-border-color: rgba(255, 182, 193, 0.5); /* Светло-розовый (цвет сакуры) */
+    -fx-border-radius: 20px;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 182, 193, 0.8), 10, 0.5, 0, 0);
+}
+
+/* Стили для текстовых меток */
 .label {
-    -fx-text-fill: white;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 700;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.5), 3, 0.8, 0, 0);
 }
+
+/* Стили для кнопок (в стиле аниме с неоновым свечением) */
 .button {
-    -fx-background-color: #4A90E2;
-    -fx-text-fill: white;
+    -fx-background-color: linear-gradient(to right, #FF69B4, #FF1493); /* Розовый градиент */
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 700;
+    -fx-background-radius: 15px;
+    -fx-padding: 10 20;
+    -fx-effect: dropshadow(gaussian, rgba(255, 105, 180, 0.8), 10, 0.5, 0, 0);
+    -fx-transition: all 0.3s ease;
 }
+
 .button:hover {
-    -fx-background-color: #357ABD;
+    -fx-background-color: linear-gradient(to right, #FF85C2, #FF4081);
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+    -fx-effect: dropshadow(gaussian, rgba(255, 105, 180, 1.0), 15, 0.8, 0, 0);
 }
+
+.button:pressed {
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+}
+
+/* Стили для таблицы (в стиле манги) */
 .table-view {
-    -fx-background-color: #2E3A4D;
+    -fx-background-color: rgba(255, 245, 238, 0.9); /* Персиковый фон */
+    -fx-background-radius: 5px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 5px;
+    -fx-border-width: 2px;
 }
+
+.table-view .column-header-background {
+    -fx-background-color: linear-gradient(to right, #00CED1, #1E90FF); /* Неоновый голубой градиент */
+    -fx-background-radius: 15px 15px 0 0;
+}
+
 .table-view .column-header {
-    -fx-background-color: #4A90E2;
-    -fx-text-fill: white;
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 700;
 }
+
+.table-view .table-cell {
+    -fx-text-fill: #333333;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 10;
+}
+
 .table-row-cell {
-    -fx-background-color: #2E3A4D;
-    -fx-text-fill: white;
+    -fx-background-color: rgba(255, 245, 238, 0.9);
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 5;
 }
+
+.table-row-cell:odd {
+    -fx-background-color: rgba(240, 230, 220, 0.9);
+}
+
 .table-row-cell:filled:selected {
-    -fx-background-color: #4A90E2;
+    -fx-background-color: rgba(255, 182, 193, 0.5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 182, 193, 0.8), 10, 0.5, 0, 0);
 }
+
+.table-row-cell:hover {
+    -fx-background-color: rgba(255, 182, 193, 0.3);
+}
+
+/* Стили для текстовых полей (кавайный стиль) */
 .text-field, .text-area {
-    -fx-background-color: #2E3A4D;
-    -fx-text-fill: white;
+    -fx-background-color: rgba(255, 240, 245, 0.9); /* Лавандовый фон */
+    -fx-text-fill: #333333;
+    -fx-background-radius: 15px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 15px;
+    -fx-border-width: 2px;
+    -fx-font-weight: 400;
 }
+
+.text-field:focused, .text-area:focused {
+    -fx-border-color: #FF69B4;
+    -fx-effect: dropshadow(gaussian, rgba(255, 105, 180, 0.8), 10, 0.5, 0, 0);
+}
+
+/* Стили для выпадающего списка (ChoiceBox) */
 .choice-box {
-    -fx-background-color: #2E3A4D;
-    -fx-text-fill: white;
+    -fx-background-color: rgba(255, 240, 245, 0.9);
+    -fx-text-fill: #333333;
+    -fx-background-radius: 15px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 15px;
+    -fx-border-width: 2px;
 }
+
+.choice-box .label {
+    -fx-text-fill: #333333;
+}
+
+.choice-box .context-menu {
+    -fx-background-color: rgba(255, 245, 238, 0.95);
+    -fx-background-radius: 15px;
+}
+
+.choice-box .menu-item:focused {
+    -fx-background-color: rgba(255, 182, 193, 0.5);
+}
+
+/* Стили для чекбокса */
 .check-box .box {
-    -fx-background-color: #2E3A4D;
+    -fx-background-color: rgba(255, 240, 245, 0.9);
+    -fx-background-radius: 5px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 5px;
+    -fx-border-width: 2px;
 }
+
+.check-box:selected .mark {
+    -fx-background-color: #FF69B4;
+}
+
 .check-box .text {
-    -fx-fill: white;
+    -fx-fill: #FFFFFF;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.5), 3, 0.8, 0, 0);
+}
+
+/* Стили для диалогов */
+.dialog-pane {
+    -fx-background-color: rgba(255, 245, 238, 0.95);
+    -fx-background-radius: 20px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 20px;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 182, 193, 0.8), 10, 0.5, 0, 0);
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: linear-gradient(to right, #FF69B4, #FF1493);
+    -fx-background-radius: 20px 20px 0 0;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 700;
+}
+
+.dialog-pane .content.label {
+    -fx-text-fill: #333333;
+}
+
+/* Стили для панели инструментов */
+.hbox {
+    -fx-background-color: rgba(255, 245, 238, 0.95);
+    -fx-background-radius: 15px;
+    -fx-border-color: rgba(255, 182, 193, 0.5);
+    -fx-border-radius: 15px;
+    -fx-border-width: 2px;
 }
