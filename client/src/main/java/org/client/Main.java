@@ -1,11 +1,9 @@
 package org.client;
 
-
-import org.client.controller.Controller;
+import javafx.application.Application;
 
 public class Main {
     public static void main(String[] args) {
-        Controller controller = new Controller();
-        controller.run();
+        Application.launch(NotesApp.class, args);
     }
 }
