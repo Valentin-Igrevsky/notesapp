@@ -308,7 +308,7 @@ public class NotesApp extends Application {
         alert.setHeaderText(null);
         alert.setContentText(message);
 
-        // Анимация появления
+
         alert.getDialogPane().setOpacity(0);
         FadeTransition fade = new FadeTransition(Duration.millis(500), alert.getDialogPane());
         fade.setFromValue(0);
