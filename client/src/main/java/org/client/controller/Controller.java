@@ -31,7 +31,7 @@ public class Controller {
             httpPacket response = client.login(username, password);
             if (response.isCorrect()) {
                 currentUser = response.getUser();
-                loadNotesFromServer();
+                syncReplaceLocalWithServer();
                 return true;
             } else {
                 return false;
@@ -104,13 +104,10 @@ public class Controller {
         }
         noteToUpdate.setTitle(title);
         noteToUpdate.setText(content);
-        noteToUpdate.setLastUpdateDate(); // Предполагается, что такой метод существует
+        noteToUpdate.setLastUpdateDate();
         if (autoSync) {
             try {
                 httpPacket response = client.patchNote(noteToUpdate);
-                if (response.isCorrect()) {
-                    // Заметка уже обновлена локально
-                }
             } catch (Exception e) {
                 // Обработка ошибки
             }
@@ -127,6 +124,7 @@ public class Controller {
 
     public void logout() {
         currentUser = null;
+        autoSync = false;
         localNotes.clear();
         serverNotes.clear();
         saveToFile();
@@ -136,6 +134,7 @@ public class Controller {
         Map<String, Object> data = new HashMap<>();
         data.put("user", currentUser);
         data.put("notes", localNotes);
+        data.put("autoSync", autoSync);
         try {
             mapper.writeValue(storage, data);
         } catch (IOException e) {
@@ -170,6 +169,7 @@ public class Controller {
             Map<String, Object> data = mapper.readValue(storage, new TypeReference<>() {});
             currentUser = mapper.convertValue(data.get("user"), User.class);
             localNotes = mapper.convertValue(data.get("notes"), new TypeReference<>() {});
+            autoSync = mapper.convertValue(data.get("autoSync"), Boolean.class);
         } catch (IOException e) {
             System.out.println("Ошибка загрузки данных.");
         }

@@ -54,13 +54,13 @@ public class NotesApp extends Application {
             if (controller.login(userField.getText(), passField.getText())) {
                 showMainGUI(stage);
             } else {
-                showAlert("Ошибка", "Неверные данные.");
+                showAlert("Ошибка", "Неверные данные.", Alert.AlertType.ERROR);
             }
         });
 
         registerButton.setOnAction(e -> showRegisterGUI(stage));
 
-        Scene scene = new Scene(grid, 300, 200);
+        Scene scene = new Scene(grid, 700, 350);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setTitle("Вход в систему заметок");
         stage.setScene(scene);
@@ -98,20 +98,20 @@ public class NotesApp extends Application {
         registerButton.setOnAction(e -> {
             if (nameField.getText().isEmpty() || surnameField.getText().isEmpty() ||
                     userField.getText().isEmpty() || passField.getText().isEmpty()) {
-                showAlert("Ошибка", "Все поля должны быть заполнены.");
+                showAlert("Ошибка", "Все поля должны быть заполнены.", Alert.AlertType.ERROR);
                 return;
             }
             if (controller.register(nameField.getText(), surnameField.getText(), userField.getText(), passField.getText())) {
-                showAlert("Успех", "Регистрация успешна. Теперь войдите.");
+                showAlert("Успех", "Регистрация успешна. Теперь войдите.", Alert.AlertType.INFORMATION);
                 showLoginGUI(stage);
             } else {
-                showAlert("Ошибка", "Ошибка регистрации. Попробуйте другое имя пользователя.");
+                showAlert("Ошибка", "Ошибка регистрации. Попробуйте другое имя пользователя.", Alert.AlertType.ERROR);
             }
         });
 
         backButton.setOnAction(e -> showLoginGUI(stage));
 
-        Scene scene = new Scene(grid, 300, 250);
+        Scene scene = new Scene(grid, 700, 350);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setTitle("Регистрация");
         stage.setScene(scene);
@@ -135,11 +135,25 @@ public class NotesApp extends Application {
         root.setTop(toolbar);
 
         notesTable = new TableView<>();
-        TableColumn<Note, Integer> idColumn = new TableColumn<>("ID");
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Note, Integer> idColumn = new TableColumn<>("№");
+        idColumn.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null) {
+                    setText(null);
+                } else {
+                    setText(String.valueOf(getIndex() + 1));
+                }
+            }
+        });
+
         TableColumn<Note, String> titleColumn = new TableColumn<>("Заголовок");
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+
         notesTable.getColumns().addAll(idColumn, titleColumn);
+
 
         List<Note> notes = controller.getLocalNotes();
         observableNotes = FXCollections.observableArrayList(notes);
@@ -152,7 +166,7 @@ public class NotesApp extends Application {
             if (selected != null) {
                 showEditNoteDialog(selected);
             } else {
-                showAlert("Ошибка", "Выберите заметку.");
+                showAlert("Ошибка", "Выберите заметку.", Alert.AlertType.ERROR);
             }
         });
         deleteButton.setOnAction(e -> {
@@ -167,7 +181,7 @@ public class NotesApp extends Application {
                     observableNotes.setAll(controller.getLocalNotes());
                 }
             } else {
-                showAlert("Ошибка", "Выберите заметку.");
+                showAlert("Ошибка", "Выберите заметку.", Alert.AlertType.ERROR);
             }
         });
         autoSyncCheck.setOnAction(e -> controller.setAutoSync(autoSyncCheck.isSelected()));
@@ -181,6 +195,7 @@ public class NotesApp extends Application {
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setTitle("Система заметок - " + controller.getCurrentUser().getName());
         stage.setScene(scene);
+        stage.setMaximized(true);
         stage.show();
     }
 
@@ -213,7 +228,7 @@ public class NotesApp extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 if (titleField.getText().isEmpty() || contentArea.getText().isEmpty()) {
-                    showAlert("Ошибка", "Заголовок и содержание не могут быть пустыми.");
+                    showAlert("Ошибка", "Заголовок и содержание не могут быть пустыми.", Alert.AlertType.ERROR);
                     return null;
                 }
                 controller.createNote(titleField.getText(), contentArea.getText());
@@ -252,7 +267,7 @@ public class NotesApp extends Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 if (titleField.getText().isEmpty() || contentArea.getText().isEmpty()) {
-                    showAlert("Ошибка", "Заголовок и содержание не могут быть пустыми.");
+                    showAlert("Ошибка", "Заголовок и содержание не могут быть пустыми.", Alert.AlertType.ERROR);
                     return null;
                 }
                 controller.updateNote(note.getId(), titleField.getText(), contentArea.getText());
@@ -302,8 +317,8 @@ public class NotesApp extends Application {
         dialog.showAndWait();
     }
 
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+    private void showAlert(String title, String message, Alert.AlertType alertType) {
+        Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

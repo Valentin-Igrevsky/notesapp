@@ -1,12 +1,8 @@
 
-@font-face {
-    font-family: 'Anime Ace';
-    src: url('/fonts/animeacev05.ttf');
-}
 
 @font-face {
-    font-family: 'Anime Ace';
-    src: url('/fonts/AnimeAceBold.ttf');
+    font-family: 'Anime Ace v05';
+    src: url('fonts/AnimeAce.ttf');
     font-weight: 700;
 }
 
@@ -14,7 +10,7 @@
     -fx-background-image: url('/images/background.jpg');
     -fx-background-size: cover;
     -fx-background-position: center;
-    -fx-font-family: 'Anime Ace', sans-serif;
+    -fx-font-family: 'Anime Ace v05', sans-serif;
     -fx-font-size: 14px;
 }
 

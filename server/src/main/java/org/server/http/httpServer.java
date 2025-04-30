@@ -8,7 +8,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import org.server.models.Note;
 import org.server.models.User;
-import org.server.database.Database;
+import org.server.database.SQLiteDatabase;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,11 +19,11 @@ import java.util.*;
 import java.util.concurrent.Executors;
 
 public class httpServer {
-    private Database database;
+    private final SQLiteDatabase SQLiteDatabase;
     ObjectMapper objectMapper = new ObjectMapper();
 
-    public httpServer(Database database) {
-        this.database = database;
+    public httpServer(SQLiteDatabase SQLiteDatabase) {
+        this.SQLiteDatabase = SQLiteDatabase;
     }
 
     public void startHttpServer(String[] args) throws IOException {
@@ -177,7 +177,7 @@ public class httpServer {
             int noteId = Integer.parseInt(result.get(true).get(0));
             int userId = Integer.parseInt(result.get(true).get(1));
 
-            List<Note> note = database.getNoteById(userId, noteId);
+            List<Note> note = SQLiteDatabase.getNoteById(userId, noteId);
 
             if (note != null) {
                 Map<String, List<Note>> responseMap = Map.of("notes", note);
@@ -201,7 +201,7 @@ public class httpServer {
 
             int userId = Integer.parseInt(result.get(true).get(0));
 
-            List<Note> notes = database.getUserNotes(userId);
+            List<Note> notes = SQLiteDatabase.getUserNotes(userId);
 
             Map<String, List<Note>> responseMap = Map.of("notes", notes);
             String jsonString = objectMapper.writeValueAsString(responseMap);
@@ -222,7 +222,7 @@ public class httpServer {
             String username = result.get(true).get(0);
             String password = result.get(true).get(1);
 
-            User user = database.authenticateUser(username, password);
+            User user = SQLiteDatabase.authenticateUser(username, password);
             if (user == null) {
                 sendResponse(exchange, 401, "Unauthorized: Invalid username or password");
                 return;
@@ -264,7 +264,7 @@ public class httpServer {
                 return;
             }
 
-            Integer userCreated = database.createUser(name, surname, username, password);
+            Integer userCreated = SQLiteDatabase.createUser(name, surname, username, password);
 
             if (userCreated != null) {
                 sendResponse(exchange, 201, "User created successfully");
@@ -283,14 +283,14 @@ public class httpServer {
 
             Note note = formatNote(noteBody);
 
-            Integer newNoteId = database.addNote(note);
+            Integer newNoteId = SQLiteDatabase.addNote(note);
 
             if (newNoteId == null) {
                 sendResponse(exchange, 500, "Internal Server Error");
             } else {
                 note.setId(newNoteId);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
-                sendResponse(exchange, 200, note.toJSON());
+                sendResponse(exchange, 200, note.toString());
             }
         }
 
@@ -318,7 +318,7 @@ public class httpServer {
             int noteId = Integer.parseInt(result.get(true).get(0));
             int userId = Integer.parseInt(result.get(true).get(1));
 
-            boolean isDeleted = database.deleteNoteById(noteId, userId);
+            boolean isDeleted = SQLiteDatabase.deleteNoteById(noteId, userId);
 
             if (isDeleted) {
                 sendResponse(exchange, 200, "Note deleted successfully");
@@ -348,7 +348,7 @@ public class httpServer {
             Note note = formatNote(noteBody);
             note.setLastUpdateDate();
 
-            Integer noteId = database.updateNote(note);
+            Integer noteId = SQLiteDatabase.updateNote(note);
 
             if (noteId == null) {
                 sendResponse(exchange, 404, "Note not found: " + note.getId());
