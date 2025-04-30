@@ -3,6 +3,7 @@ package org.client;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -14,7 +15,10 @@ import javafx.geometry.Insets;
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 public class NotesApp extends Application {
     private Controller controller = new Controller();
@@ -23,6 +27,7 @@ public class NotesApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        primaryStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/icon.jpg"))));
         if (controller.isLoggedIn()) {
             showMainGUI(primaryStage);
         } else {
@@ -62,8 +67,9 @@ public class NotesApp extends Application {
 
         Scene scene = new Scene(grid, 700, 350);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        stage.setTitle("Вход в систему заметок");
+        stage.setTitle("Metanita Notes | Вход в систему заметок");
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 
@@ -113,12 +119,15 @@ public class NotesApp extends Application {
 
         Scene scene = new Scene(grid, 700, 350);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        stage.setTitle("Регистрация");
+        stage.setTitle("Metanita Notes | Регистрация");
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 
     private void showMainGUI(Stage stage) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
         BorderPane root = new BorderPane();
         HBox toolbar = new HBox(10);
         toolbar.setPadding(new Insets(10));
@@ -152,13 +161,28 @@ public class NotesApp extends Application {
         TableColumn<Note, String> titleColumn = new TableColumn<>("Заголовок");
         titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
 
-        notesTable.getColumns().addAll(idColumn, titleColumn);
+        TableColumn<Note, String> createDateColumn = new TableColumn<>("Дата создания");
+        createDateColumn.setCellValueFactory(cellData -> {
+            Date date = new Date(cellData.getValue().getCreateDate());
+            return new javafx.beans.property.SimpleStringProperty(dateFormat.format(date));
+        });
 
+        TableColumn<Note, String> lastUpdateDateColumn = new TableColumn<>("Дата изменения");
+        lastUpdateDateColumn.setCellValueFactory(cellData -> {
+            Date date = new Date(cellData.getValue().getLastUpdateDate());
+            return new javafx.beans.property.SimpleStringProperty(dateFormat.format(date));
+        });
+
+        notesTable.getColumns().addAll(idColumn, titleColumn, lastUpdateDateColumn, createDateColumn);
 
         List<Note> notes = controller.getLocalNotes();
         observableNotes = FXCollections.observableArrayList(notes);
         notesTable.setItems(observableNotes);
         root.setCenter(notesTable);
+
+        lastUpdateDateColumn.setSortType(TableColumn.SortType.DESCENDING);
+        notesTable.getSortOrder().add(lastUpdateDateColumn);
+        notesTable.sort();
 
         createButton.setOnAction(e -> showCreateNoteDialog());
         editButton.setOnAction(e -> {
@@ -193,8 +217,9 @@ public class NotesApp extends Application {
 
         Scene scene = new Scene(root, 800, 600);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        stage.setTitle("Система заметок - " + controller.getCurrentUser().getName());
+        stage.setTitle("Metanita Notes | Добро пожаловать, " + controller.getCurrentUser().getName());
         stage.setScene(scene);
+        stage.setResizable(true);
         stage.setMaximized(true);
         stage.show();
     }
