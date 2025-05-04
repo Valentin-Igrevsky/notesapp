@@ -193,6 +193,7 @@ public class NotesApp extends Application {
                 showAlert("Ошибка", "Выберите заметку.", Alert.AlertType.ERROR);
             }
         });
+
         deleteButton.setOnAction(e -> {
             Note selected = notesTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -208,8 +209,10 @@ public class NotesApp extends Application {
                 showAlert("Ошибка", "Выберите заметку.", Alert.AlertType.ERROR);
             }
         });
+
         autoSyncCheck.setOnAction(e -> controller.setAutoSync(autoSyncCheck.isSelected()));
         syncButton.setOnAction(e -> showSyncDialog());
+
         logoutButton.setOnAction(e -> {
             controller.logout();
             showLoginGUI(stage);

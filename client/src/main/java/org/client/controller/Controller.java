@@ -78,13 +78,15 @@ public class Controller {
         if (currentUser == null) {
             throw new IllegalStateException("User not logged in");
         }
-        try {
-            httpPacket response = client.deleteNoteById(currentUser.getId(), id);
-            if (response.isCorrect()) {
-                localNotes.removeIf(note -> note.getId() == id);
+        if (autoSync) {
+            try {
+                httpPacket response = client.deleteNoteById(currentUser.getId(), id);
+                if (response.isCorrect()) {
+                    localNotes.removeIf(note -> note.getId() == id);
+                }
+            } catch (Exception e) {
+                // Обработка ошибки
             }
-        } catch (Exception e) {
-            // Обработка ошибки
         }
     }
 
